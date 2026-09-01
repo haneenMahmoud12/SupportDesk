@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SupportDesk.Api/SupportDesk.Api.csproj" />
+  <Project Path="SupportDesk.Application/SupportDesk.Application.csproj" />
+  <Project Path="SupportDesk.Domain/SupportDesk.Domain.csproj" />
+  <Project Path="SupportDesk.Infrastructure/SupportDesk.Infrastructure.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+</Solution>
