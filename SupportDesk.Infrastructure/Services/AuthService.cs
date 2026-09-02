@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SupportDesk.Application.DTOs;
+using SupportDesk.Application.Constants;
 using SupportDesk.Application.Models;
 using SupportDesk.Application.Services;
 using SupportDesk.Infrastructure.Authentication;
@@ -16,8 +17,6 @@ public sealed class AuthService(
     RoleManager<IdentityRole> roleManager,
     IConfiguration configuration) : IAuthService
 {
-    private const string DefaultRole = "User";
-
     public async Task<RegisterUserModel> RegisterUserAsync(RegisterUserDTO request)
     {
         var user = new ApplicationUser
@@ -37,9 +36,9 @@ public sealed class AuthService(
             };
         }
 
-        if (!await roleManager.RoleExistsAsync(DefaultRole))
+        if (!await roleManager.RoleExistsAsync(RoleNames.User))
         {
-            var roleResult = await roleManager.CreateAsync(new IdentityRole(DefaultRole));
+            var roleResult = await roleManager.CreateAsync(new IdentityRole(RoleNames.User));
             if (!roleResult.Succeeded)
             {
                 await userManager.DeleteAsync(user);
@@ -51,7 +50,7 @@ public sealed class AuthService(
             }
         }
 
-        var addToRoleResult = await userManager.AddToRoleAsync(user, DefaultRole);
+        var addToRoleResult = await userManager.AddToRoleAsync(user, RoleNames.User);
         if (!addToRoleResult.Succeeded)
         {
             await userManager.DeleteAsync(user);

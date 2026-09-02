@@ -71,6 +71,7 @@ public sealed class TicketCommentsService(
                 TicketId = request.TicketId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = request.CreatedByUserId
+                    ?? throw new InvalidOperationException("Created-by user ID is required.")
             };
             await ticketCommentsRepository.AddAsync(comment, cancellationToken);
         }

@@ -11,5 +11,7 @@ public interface ITicketService
 
     Task<ResponseModel> SaveTicketAsync(SaveTicketDTO ticket, CancellationToken cancellationToken = default);
 
+    Task<ResponseModel> UpdateTicketStatusAsync(long id, string status, string userId, CancellationToken cancellationToken = default);
+
     Task<ResponseModel> DeleteTicketAsync(long id, string userId, CancellationToken cancellationToken = default);
 }

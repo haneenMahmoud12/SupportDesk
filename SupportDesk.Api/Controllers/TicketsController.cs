@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SupportDesk.Application.DTOs;
+using SupportDesk.Application.Constants;
 using SupportDesk.Application.Models;
 using SupportDesk.Application.Services.TicketService;
 
@@ -98,6 +99,40 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
                 cancellationToken);
 
             return result.Succeeded ? Ok(result) : NotFound(result);
+        }
+        catch (Exception)
+        {
+            return InternalServerError();
+        }
+    }
+
+    [Authorize(Roles = RoleNames.Admin)]
+    [HttpPatch("{id:long}/status")]
+    public async Task<IActionResult> UpdateStatus(
+        long id,
+        UpdateTicketStatusDTO request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is null)
+                return Unauthorized(Failure("The authenticated user ID is missing."));
+
+            var result = await ticketService.UpdateTicketStatusAsync(
+                id,
+                request.Status,
+                userId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(Failure(exception.Message));
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(Failure(exception.Message));
         }
         catch (Exception)
         {

@@ -10,7 +10,6 @@ namespace SupportDesk.Application.DTOs
         public long? Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
         public string Priority { get; set; } = string.Empty;
         public string? CreatedByUserId { get; set; }
         public string? UpdatedByUserId { get; set; }

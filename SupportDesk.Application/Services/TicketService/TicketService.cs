@@ -54,7 +54,8 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
             {
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = request.CreatedByUserId
-                    ?? throw new InvalidOperationException("Created-by user ID is required.")
+                    ?? throw new InvalidOperationException("Created-by user ID is required."),
+                Status = TicketStatus.Open
             };
 
             await ticketRepository.AddAsync(ticket, cancellationToken);
@@ -62,19 +63,34 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
 
         ticket.Title = request.Title;
         ticket.Description = request.Description;
-        if (!Enum.TryParse<TicketStatus>(request.Status, true, out var status))
-            throw new ArgumentException("Invalid ticket status.", nameof(request.Status));
         if (!Enum.TryParse<TicketPriority>(request.Priority, true, out var priority))
             throw new ArgumentException("Invalid ticket priority.", nameof(request.Priority));
 
-        ticket.Status = status;
         ticket.Priority = priority;
 
         await ticketRepository.SaveChangesAsync(cancellationToken);
         return new ResponseModel { Succeeded = true };
     }
 
-    public async Task<ResponseModel> DeleteTicketAsync(long id, string userId,CancellationToken cancellationToken = default)
+    public async Task<ResponseModel> UpdateTicketStatusAsync(long id, string status, string userId, CancellationToken cancellationToken = default)
+    {
+        var ticket = await ticketRepository.GetByIdAsync(id, cancellationToken);
+        if (ticket is null || ticket.IsDeleted)
+            throw new KeyNotFoundException("Ticket not found.");
+
+        if (!Enum.TryParse<TicketStatus>(status, true, out var parsedStatus))
+            throw new ArgumentException("Invalid ticket status.", nameof(status));
+
+        ticket.Status = parsedStatus;
+        ticket.UpdatedAt = DateTime.UtcNow;
+        ticket.UpdatedByUserId = userId;
+        ticketRepository.Update(ticket);
+        await ticketRepository.SaveChangesAsync(cancellationToken);
+
+        return new ResponseModel { Succeeded = true };
+    }
+
+    public async Task<ResponseModel> DeleteTicketAsync(long id, string userId, CancellationToken cancellationToken = default)
     {
         var ticket = await ticketRepository.GetByIdAsync(id, cancellationToken);
         if (ticket is null)
