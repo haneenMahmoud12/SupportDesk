@@ -9,8 +9,4 @@ public sealed class SaveTicketCommentDTO
     [Required]
     [StringLength(4000, MinimumLength = 1)]
     public string Content { get; set; } = string.Empty;
-
-    [Range(1, long.MaxValue)]
-    public long TicketId { get; set; }
-    public string? CreatedByUserId { get; set; }
 }

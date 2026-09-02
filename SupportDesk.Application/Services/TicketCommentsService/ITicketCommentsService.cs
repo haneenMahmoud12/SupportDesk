@@ -6,17 +6,14 @@ namespace SupportDesk.Application.Services.TicketCommentsService;
 public interface ITicketCommentsService
 {
     Task<PagedResultModel<TicketCommentDTO>> GetAllTicketCommentsAsync(
-        PagedRequestDTO request,
-        long ticketId,
+        PagedRequestDTO request, long ticketId, string userId, bool isAdmin,
         CancellationToken cancellationToken = default);
 
     Task<ResponseModel> SaveTicketCommentAsync(
-        SaveTicketCommentDTO ticketComment,
+        SaveTicketCommentDTO comment, long ticketId, string userId, bool isAdmin,
         CancellationToken cancellationToken = default);
 
     Task<ResponseModel> DeleteTicketCommentAsync(
-        long id,
-        long ticketId,
-        string userId,
+        long id, long ticketId, string userId, bool isAdmin,
         CancellationToken cancellationToken = default);
 }

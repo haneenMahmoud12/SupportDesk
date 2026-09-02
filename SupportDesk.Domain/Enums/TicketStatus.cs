@@ -8,7 +8,6 @@ namespace SupportDesk.Domain.Enums
     {
         Open,
         InProgress,
-        Resolved,
         Closed
     }
 }

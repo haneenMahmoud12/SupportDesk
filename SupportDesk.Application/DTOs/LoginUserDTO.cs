@@ -7,6 +7,6 @@ public sealed class LoginUserDTO
     [Required, EmailAddress]
     public string Email { get; init; } = string.Empty;
 
-    [Required]
+    [Required, StringLength(256)]
     public string Password { get; init; } = string.Empty;
 }
