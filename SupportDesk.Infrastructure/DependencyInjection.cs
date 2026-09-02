@@ -1,14 +1,20 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SupportDesk.Application.Services;
+using SupportDesk.Application.Services.TicketService;
+using SupportDesk.Application.Services.TicketCommentsService;
+using SupportDesk.Application.Interfaces.Repositories;
+using SupportDesk.Application.Models;
 using SupportDesk.Infrastructure.Authentication;
 using SupportDesk.Infrastructure.Data;
 using SupportDesk.Infrastructure.Services;
+using SupportDesk.Infrastructure.Repositories;
 
 namespace SupportDesk.Infrastructure;
 
@@ -59,10 +65,38 @@ public static class DependencyInjection
                         jwtKeyBytes),
                     ClockSkew = TimeSpan.Zero
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await context.Response.WriteAsJsonAsync(new ResponseModel
+                        {
+                            Succeeded = false,
+                            Errors = ["Authentication is required or the token is invalid."]
+                        });
+                    },
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        await context.Response.WriteAsJsonAsync(new ResponseModel
+                        {
+                            Succeeded = false,
+                            Errors = ["You are not authorized to perform this action."]
+                        });
+                    }
+                };
             });
 
         services.AddAuthorization();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ITicketService, TicketService>();
+        services.AddScoped<ITicketCommentsService, TicketCommentsService>();
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<ITicketCommentsRepository, TicketCommentsRepository>();
 
         return services;
     }
