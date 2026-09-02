@@ -36,12 +36,31 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
         }
     }
 
+    [Authorize(Roles = RoleNames.Admin)]
     [HttpGet("tickets")]
     public async Task<IActionResult> GetAll([FromQuery] PagedRequestDTO request, CancellationToken cancellationToken)
     {
         try
         {
             return Ok(await ticketService.GetAllTicketsAsync(request, cancellationToken));
+        }
+        catch (Exception)
+        {
+            return InternalServerError();
+        }
+    }
+
+    [HttpGet("userTickets")]
+    public async Task<IActionResult> GetAllUserTickets([FromQuery] PagedRequestDTO request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is null)
+            {
+                return Unauthorized(Failure("The authenticated user ID is missing."));
+            }
+            return Ok(await ticketService.GetAllUserTicketsAsync(request, userId, cancellationToken));
         }
         catch (Exception)
         {

@@ -23,6 +23,7 @@ public sealed class TicketRepository(AppDbContext context)
         string? search,
         string? sortColumn,
         string? sortDirection,
+        string? userId = null,
         CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(pageNumber, 1);
@@ -37,6 +38,11 @@ public sealed class TicketRepository(AppDbContext context)
             var term = search.Trim();
             query = query.Where(ticket =>
                 ticket.Title.Contains(term) || ticket.Description.Contains(term));
+        }
+        
+        if(!string.IsNullOrWhiteSpace(userId))
+        {
+            query = query.Where(ticket => ticket.CreatedByUserId == userId);
         }
 
         var descending = string.Equals(

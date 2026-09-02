@@ -22,6 +22,30 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
             request.Search,
             request.SortColumn,
             request.SortDirection,
+            null,
+            cancellationToken);
+
+        return new PagedResultModel<TicketDTO>
+        {
+            Succeeded = true,
+            Items = items.Select(MapTicket).ToArray(),
+            TotalCount = totalCount,
+            PageNumber = Math.Max(request.PageNumber, 1),
+            PageSize = Math.Clamp(request.PageSize, 1, 100),
+            TotalPages = (int)Math.Ceiling(
+                totalCount / (double)Math.Clamp(request.PageSize, 1, 100))
+        };
+    }
+
+    public async Task<PagedResultModel<TicketDTO>> GetAllUserTicketsAsync(PagedRequestDTO request, string userId, CancellationToken cancellationToken = default)
+    {
+        var (items, totalCount) = await ticketRepository.GetPagedAsync(
+            request.PageNumber,
+            request.PageSize,
+            request.Search,
+            request.SortColumn,
+            request.SortDirection,
+            userId,
             cancellationToken);
 
         return new PagedResultModel<TicketDTO>

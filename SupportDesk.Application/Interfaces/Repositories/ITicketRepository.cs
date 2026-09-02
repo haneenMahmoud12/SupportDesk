@@ -14,5 +14,6 @@ public interface ITicketRepository : IRepository<Ticket>
         string? search,
         string? sortColumn,
         string? sortDirection,
+        string? userId = null,
         CancellationToken cancellationToken = default);
 }
