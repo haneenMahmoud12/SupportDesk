@@ -16,26 +16,15 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
     [HttpGet("ticket/{id:long}")]
     public async Task<IActionResult> Get(long id, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null)
-                return Unauthorized(Failure("The authenticated user ID is missing."));
+        var userId = CurrentUserId();
+        if (userId is null)
+            return Unauthorized(Failure("The authenticated user ID is missing."));
 
-            var ticket = await ticketService.GetTicketByIdAsync(
-                id, userId, IsAdmin(), cancellationToken);
-            return ticket is null
-                ? NotFound(Failure($"Ticket with ID {id} was not found."))
-                : Ok(new ResponseModel<TicketDTO> { Succeeded = true, Data = ticket });
-        }
-        catch (UnauthorizedAccessException exception)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, Failure(exception.Message));
-        }
-        catch (Exception)
-        {
-            return InternalServerError();
-        }
+        var ticket = await ticketService.GetTicketByIdAsync(
+            id, userId, IsAdmin(), cancellationToken);
+        return ticket is null
+            ? NotFound(Failure($"Ticket with ID {id} was not found."))
+            : Ok(new ResponseModel<TicketDTO> { Succeeded = true, Data = ticket });
     }
 
     [Authorize(Roles = RoleNames.Admin)]
@@ -43,90 +32,42 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
     public async Task<IActionResult> GetAll(
         [FromQuery] PagedRequestDTO request, CancellationToken cancellationToken)
     {
-        try
-        {
-            return Ok(await ticketService.GetAllTicketsAsync(request, cancellationToken));
-        }
-        catch (Exception)
-        {
-            return InternalServerError();
-        }
+        return Ok(await ticketService.GetAllTicketsAsync(request, cancellationToken));
     }
 
     [HttpGet("userTickets")]
     public async Task<IActionResult> GetAllUserTickets(
         [FromQuery] PagedRequestDTO request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null)
-                return Unauthorized(Failure("The authenticated user ID is missing."));
+        var userId = CurrentUserId();
+        if (userId is null)
+            return Unauthorized(Failure("The authenticated user ID is missing."));
 
-            return Ok(await ticketService.GetAllUserTicketsAsync(
-                request, userId, cancellationToken));
-        }
-        catch (Exception)
-        {
-            return InternalServerError();
-        }
+        return Ok(await ticketService.GetAllUserTicketsAsync(
+            request, userId, cancellationToken));
     }
 
     [HttpPost("saveTicket")]
     public async Task<IActionResult> Save(
         SaveTicketDTO ticket, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null)
-                return Unauthorized(Failure("The authenticated user ID is missing."));
+        var userId = CurrentUserId();
+        if (userId is null)
+            return Unauthorized(Failure("The authenticated user ID is missing."));
 
-            return Ok(await ticketService.SaveTicketAsync(
-                ticket, userId, IsAdmin(), cancellationToken));
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return NotFound(Failure(exception.Message));
-        }
-        catch (UnauthorizedAccessException exception)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, Failure(exception.Message));
-        }
-        catch (ArgumentException exception)
-        {
-            return BadRequest(Failure(exception.Message));
-        }
-        catch (Exception)
-        {
-            return InternalServerError();
-        }
+        return Ok(await ticketService.SaveTicketAsync(
+            ticket, userId, IsAdmin(), cancellationToken));
     }
 
     [HttpDelete("delete/{id:long}")]
     public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null)
-                return Unauthorized(Failure("The authenticated user ID is missing."));
+        var userId = CurrentUserId();
+        if (userId is null)
+            return Unauthorized(Failure("The authenticated user ID is missing."));
 
-            return Ok(await ticketService.DeleteTicketAsync(
-                id, userId, IsAdmin(), cancellationToken));
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return NotFound(Failure(exception.Message));
-        }
-        catch (UnauthorizedAccessException exception)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, Failure(exception.Message));
-        }
-        catch (Exception)
-        {
-            return InternalServerError();
-        }
+        return Ok(await ticketService.DeleteTicketAsync(
+            id, userId, IsAdmin(), cancellationToken));
     }
 
     [Authorize(Roles = RoleNames.Admin)]
@@ -134,36 +75,16 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
     public async Task<IActionResult> UpdateStatus(
         long id, UpdateTicketStatusDTO request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null)
-                return Unauthorized(Failure("The authenticated user ID is missing."));
+        var userId = CurrentUserId();
+        if (userId is null)
+            return Unauthorized(Failure("The authenticated user ID is missing."));
 
-            return Ok(await ticketService.UpdateTicketStatusAsync(
-                id, request.Status, userId, cancellationToken));
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return NotFound(Failure(exception.Message));
-        }
-        catch (ArgumentException exception)
-        {
-            return BadRequest(Failure(exception.Message));
-        }
-        catch (Exception)
-        {
-            return InternalServerError();
-        }
+        return Ok(await ticketService.UpdateTicketStatusAsync(
+            id, request.Status, userId, cancellationToken));
     }
 
     private string? CurrentUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
     private bool IsAdmin() => User.IsInRole(RoleNames.Admin);
-
-    private ObjectResult InternalServerError() => StatusCode(
-        StatusCodes.Status500InternalServerError,
-        Failure("An unexpected error occurred."));
-
     private static ResponseModel Failure(string message) => new()
     {
         Succeeded = false,

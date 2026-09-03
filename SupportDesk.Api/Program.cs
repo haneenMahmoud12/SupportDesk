@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
-using SupportDesk.Infrastructure;
+using SupportDesk.Api.Middleware;
 using SupportDesk.Application.Models;
+using SupportDesk.Infrastructure;
 using SupportDesk.Infrastructure.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -59,6 +60,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseStatusCodePages(async context =>
 {

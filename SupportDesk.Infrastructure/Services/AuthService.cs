@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using SupportDesk.Application.DTOs;
 using SupportDesk.Application.Constants;
@@ -15,7 +16,8 @@ namespace SupportDesk.Infrastructure.Services;
 public sealed class AuthService(
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
-    IConfiguration configuration) : IAuthService
+    IConfiguration configuration,
+    ILogger<AuthService> logger) : IAuthService
 {
     public async Task<RegisterUserModel> RegisterUserAsync(RegisterUserDTO request)
     {
@@ -29,6 +31,9 @@ public sealed class AuthService(
 
         if (!createResult.Succeeded)
         {
+            logger.LogWarning(
+                "User registration failed. Identity error codes: {ErrorCodes}",
+                string.Join(", ", createResult.Errors.Select(error => error.Code)));
             return new RegisterUserModel
             {
                 Succeeded = false,
@@ -41,6 +46,10 @@ public sealed class AuthService(
             var roleResult = await roleManager.CreateAsync(new IdentityRole(RoleNames.User));
             if (!roleResult.Succeeded)
             {
+                logger.LogError(
+                    "Failed to create the default role {Role}. Identity error codes: {ErrorCodes}",
+                    RoleNames.User,
+                    string.Join(", ", roleResult.Errors.Select(error => error.Code)));
                 await userManager.DeleteAsync(user);
                 return new RegisterUserModel
                 {
@@ -53,6 +62,11 @@ public sealed class AuthService(
         var addToRoleResult = await userManager.AddToRoleAsync(user, RoleNames.User);
         if (!addToRoleResult.Succeeded)
         {
+            logger.LogError(
+                "Failed to assign role {Role} to user {UserId}. Identity error codes: {ErrorCodes}",
+                RoleNames.User,
+                user.Id,
+                string.Join(", ", addToRoleResult.Errors.Select(error => error.Code)));
             await userManager.DeleteAsync(user);
             return new RegisterUserModel
             {
@@ -60,6 +74,8 @@ public sealed class AuthService(
                 Errors = addToRoleResult.Errors.Select(error => error.Description).ToArray()
             };
         }
+
+        logger.LogInformation("User {UserId} registered successfully", user.Id);
 
         return new RegisterUserModel
         {
@@ -73,12 +89,15 @@ public sealed class AuthService(
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
         {
+            logger.LogWarning("Failed login attempt");
             return FailedLogin();
         }
 
         var expiresAtUtc = DateTime.UtcNow.AddMinutes(
             configuration.GetValue<double?>("Jwt:AccessTokenExpirationMinutes") ?? 60);
         var token = await CreateAccessTokenAsync(user, expiresAtUtc);
+
+        logger.LogInformation("User {UserId} logged in successfully", user.Id);
 
         return new LoginUserModel
         {

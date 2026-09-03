@@ -2,12 +2,14 @@ using SupportDesk.Application.DTOs;
 using SupportDesk.Application.Interfaces.Repositories;
 using SupportDesk.Application.Models;
 using SupportDesk.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace SupportDesk.Application.Services.TicketCommentsService;
 
 public sealed class TicketCommentsService(
     ITicketCommentsRepository commentsRepository,
-    ITicketRepository ticketRepository) : ITicketCommentsService
+    ITicketRepository ticketRepository,
+    ILogger<TicketCommentsService> logger) : ITicketCommentsService
 {
     public async Task<PagedResultModel<TicketCommentDTO>> GetAllTicketCommentsAsync(
         PagedRequestDTO request, long ticketId, string userId, bool isAdmin,
@@ -66,6 +68,13 @@ public sealed class TicketCommentsService(
 
         comment.Content = request.Content.Trim();
         await commentsRepository.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            request.Id.HasValue
+                ? "Comment {CommentId} on ticket {TicketId} updated by user {UserId}"
+                : "Comment {CommentId} added to ticket {TicketId} by user {UserId}",
+            comment.Id,
+            ticketId,
+            userId);
         return new ResponseModel { Succeeded = true };
     }
 
@@ -85,6 +94,11 @@ public sealed class TicketCommentsService(
         comment.UpdatedByUserId = userId;
         commentsRepository.Update(comment);
         await commentsRepository.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Comment {CommentId} on ticket {TicketId} deleted by user {UserId}",
+            comment.Id,
+            ticketId,
+            userId);
         return new ResponseModel { Succeeded = true };
     }
 

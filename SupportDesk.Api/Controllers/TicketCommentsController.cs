@@ -18,16 +18,10 @@ public sealed class TicketCommentsController(ITicketCommentsService service) : C
         long ticketId, [FromQuery] PagedRequestDTO request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null) return Unauthorized(Failure("The authenticated user ID is missing."));
-            return Ok(await service.GetAllTicketCommentsAsync(
-                request, ticketId, userId, IsAdmin(), cancellationToken));
-        }
-        catch (KeyNotFoundException exception) { return NotFound(Failure(exception.Message)); }
-        catch (UnauthorizedAccessException exception) { return Forbidden(exception.Message); }
-        catch (Exception) { return InternalServerError(); }
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized(Failure("The authenticated user ID is missing."));
+        return Ok(await service.GetAllTicketCommentsAsync(
+            request, ticketId, userId, IsAdmin(), cancellationToken));
     }
 
     [HttpPost]
@@ -35,41 +29,24 @@ public sealed class TicketCommentsController(ITicketCommentsService service) : C
         long ticketId, SaveTicketCommentDTO comment,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null) return Unauthorized(Failure("The authenticated user ID is missing."));
-            return Ok(await service.SaveTicketCommentAsync(
-                comment, ticketId, userId, IsAdmin(), cancellationToken));
-        }
-        catch (KeyNotFoundException exception) { return NotFound(Failure(exception.Message)); }
-        catch (UnauthorizedAccessException exception) { return Forbidden(exception.Message); }
-        catch (ArgumentException exception) { return BadRequest(Failure(exception.Message)); }
-        catch (Exception) { return InternalServerError(); }
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized(Failure("The authenticated user ID is missing."));
+        return Ok(await service.SaveTicketCommentAsync(
+            comment, ticketId, userId, IsAdmin(), cancellationToken));
     }
 
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Delete(
         long ticketId, long id, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = CurrentUserId();
-            if (userId is null) return Unauthorized(Failure("The authenticated user ID is missing."));
-            return Ok(await service.DeleteTicketCommentAsync(
-                id, ticketId, userId, IsAdmin(), cancellationToken));
-        }
-        catch (KeyNotFoundException exception) { return NotFound(Failure(exception.Message)); }
-        catch (UnauthorizedAccessException exception) { return Forbidden(exception.Message); }
-        catch (Exception) { return InternalServerError(); }
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized(Failure("The authenticated user ID is missing."));
+        return Ok(await service.DeleteTicketCommentAsync(
+            id, ticketId, userId, IsAdmin(), cancellationToken));
     }
 
     private string? CurrentUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
     private bool IsAdmin() => User.IsInRole(RoleNames.Admin);
-    private ObjectResult Forbidden(string message) => StatusCode(
-        StatusCodes.Status403Forbidden, Failure(message));
-    private ObjectResult InternalServerError() => StatusCode(
-        StatusCodes.Status500InternalServerError, Failure("An unexpected error occurred."));
     private static ResponseModel Failure(string message) => new()
     {
         Succeeded = false,

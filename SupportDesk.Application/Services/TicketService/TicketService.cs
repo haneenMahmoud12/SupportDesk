@@ -1,3 +1,5 @@
+using System;
+using Microsoft.Extensions.Logging;
 using SupportDesk.Application.DTOs;
 using SupportDesk.Application.Interfaces.Repositories;
 using SupportDesk.Application.Models;
@@ -6,7 +8,7 @@ using SupportDesk.Domain.Enums;
 
 namespace SupportDesk.Application.Services.TicketService;
 
-public sealed class TicketService(ITicketRepository ticketRepository) : ITicketService
+public sealed class TicketService(ITicketRepository ticketRepository, ILogger<TicketService> logger) : ITicketService
 {
     public async Task<TicketDTO?> GetTicketByIdAsync(
         long id, string userId, bool isAdmin,
@@ -66,6 +68,10 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
         ticket.Priority = priority;
 
         await ticketRepository.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            request.Id.HasValue ? "Ticket {TicketId} updated by user {UserId}" : "Ticket {TicketId} created by user {UserId}",
+            ticket.Id,
+            userId);
         return new ResponseModel { Succeeded = true };
     }
 
@@ -85,6 +91,11 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
         ticket.UpdatedByUserId = userId;
         ticketRepository.Update(ticket);
         await ticketRepository.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Ticket {TicketId} status changed to {Status} by user {UserId}",
+            ticket.Id,
+            ticket.Status,
+            userId);
         return new ResponseModel { Succeeded = true };
     }
 
@@ -103,6 +114,10 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
         ticket.IsDeleted = true;
         ticketRepository.Update(ticket);
         await ticketRepository.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Ticket {TicketId} deleted by user {UserId}",
+            ticket.Id,
+            userId);
         return new ResponseModel { Succeeded = true };
     }
 
@@ -111,7 +126,8 @@ public sealed class TicketService(ITicketRepository ticketRepository) : ITicketS
     {
         var (items, totalCount) = await ticketRepository.GetPagedAsync(
             request.PageNumber, request.PageSize, request.Search,
-            request.SortColumn, request.SortDirection, userId, cancellationToken);
+            request.SortColumn, request.SortDirection, userId,
+            request.Status, request.Priority, cancellationToken);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
         return new PagedResultModel<TicketDTO>

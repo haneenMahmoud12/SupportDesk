@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SupportDesk.Application.Interfaces.Repositories;
 using SupportDesk.Domain.Entities;
+using SupportDesk.Domain.Enums;
 using SupportDesk.Infrastructure.Data;
 
 namespace SupportDesk.Infrastructure.Repositories;
@@ -24,6 +25,8 @@ public sealed class TicketRepository(AppDbContext context)
         string? sortColumn,
         string? sortDirection,
         string? userId = null,
+        string? status = null,
+        string? priority = null,
         CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(pageNumber, 1);
@@ -45,6 +48,20 @@ public sealed class TicketRepository(AppDbContext context)
             query = query.Where(ticket => ticket.CreatedByUserId == userId);
         }
 
+        if (!string.IsNullOrWhiteSpace(status)) {
+            if (Enum.TryParse<TicketStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(ticket => ticket.Status == parsedStatus);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(priority))
+        {
+            if (Enum.TryParse<TicketPriority>(priority, true, out var parsedPriority))
+            {
+                query = query.Where(ticket => ticket.Priority == parsedPriority);
+            }
+        }
         var descending = string.Equals(
             sortDirection,
             "desc",
