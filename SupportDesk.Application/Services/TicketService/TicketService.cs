@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Extensions.Logging;
 using SupportDesk.Application.DTOs;
+using SupportDesk.Application.Exceptions;
 using SupportDesk.Application.Interfaces.Repositories;
 using SupportDesk.Application.Models;
 using SupportDesk.Domain.Entities;
@@ -61,7 +62,7 @@ public sealed class TicketService(ITicketRepository ticketRepository, ILogger<Ti
         }
 
         if (!Enum.TryParse<TicketPriority>(request.Priority, true, out var priority))
-            throw new ArgumentException("Invalid ticket priority.", nameof(request.Priority));
+            throw new BadRequestException("Invalid ticket priority.");
 
         ticket.Title = request.Title.Trim();
         ticket.Description = request.Description.Trim();
@@ -84,7 +85,7 @@ public sealed class TicketService(ITicketRepository ticketRepository, ILogger<Ti
             throw new KeyNotFoundException("Ticket not found.");
 
         if (!Enum.TryParse<TicketStatus>(status, true, out var parsedStatus))
-            throw new ArgumentException("Invalid ticket status.", nameof(status));
+            throw new BadRequestException("Invalid ticket status.");
 
         ticket.Status = parsedStatus;
         ticket.UpdatedAt = DateTime.UtcNow;

@@ -1,4 +1,5 @@
 using SupportDesk.Application.DTOs;
+using SupportDesk.Application.Exceptions;
 using SupportDesk.Application.Interfaces.Repositories;
 using SupportDesk.Application.Models;
 using SupportDesk.Domain.Entities;
@@ -37,7 +38,7 @@ public sealed class TicketCommentsService(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Content))
-            throw new ArgumentException("Comment content is required.", nameof(request.Content));
+            throw new BadRequestException("Comment content is required.");
 
         await EnsureTicketAccessAsync(ticketId, userId, isAdmin, cancellationToken);
         TicketComment comment;

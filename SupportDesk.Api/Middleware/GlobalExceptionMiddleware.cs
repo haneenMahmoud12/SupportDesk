@@ -12,8 +12,23 @@ namespace SupportDesk.Api.Middleware
             {
                 await next(context);
             }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                logger.LogDebug(
+                    "Request was cancelled by the client. TraceId: {TraceId}",
+                    context.TraceIdentifier);
+            }
             catch (Exception exception)
             {
+                if (context.Response.HasStarted)
+                {
+                    logger.LogError(
+                        exception,
+                        "An exception occurred after the response started. TraceId: {TraceId}",
+                        context.TraceIdentifier);
+                    throw;
+                }
+
                 await HandleExceptionAsync(context, exception);
             }
         }
@@ -30,7 +45,7 @@ namespace SupportDesk.Api.Middleware
                 UnauthorizedAccessException =>
                     (StatusCodes.Status403Forbidden, exception.Message),
 
-                ArgumentException =>
+                SupportDesk.Application.Exceptions.BadRequestException =>
                     (StatusCodes.Status400BadRequest, exception.Message),
 
                 _ =>
@@ -52,11 +67,6 @@ namespace SupportDesk.Api.Middleware
                     "Request failed with status {StatusCode}. TraceId: {TraceId}",
                     statusCode,
                     context.TraceIdentifier);
-            }
-
-            if (context.Response.HasStarted)
-            {
-                throw exception;
             }
 
             context.Response.Clear();
